@@ -18,19 +18,19 @@ No training needed to use it — just Ollama:
 
 
 
-\\`\\`\\`
+\\`\\\\`\\`
 
 ollama pull deepikagummallacs/scenecraft
 
 ollama run deepikagummallacs/scenecraft
 
-\\`\\`\\`
+\\`\\\\`\\`
 
 
 
 Example:
 
-\\`\\`\\`
+\\`\\\\`\\`
 
 Input:  a cat sitting on a windowsill
 
@@ -42,7 +42,7 @@ against the side of the window. A bright light shines onto the backside
 
 of the cat from outside the building...
 
-\\`\\`\\`
+\\`\\\\`\\`
 
 
 
@@ -56,17 +56,17 @@ of the cat from outside the building...
 
 | Base model | Qwen2.5-3B-Instruct |
 
-| Method | QLoRA (4-bit) fine-tuning via \[Unsloth](https://github.com/unslothai/unsloth) |
+| Method | QLoRA (4-bit) fine-tuning via Unsloth (https://github.com/unslothai/unsloth) |
 
 | Platform | Google Colab (free T4 GPU) |
 
-| Dataset | \[gokaygokay/prompt-enhancer-dataset](https://huggingface.co/datasets/gokaygokay/prompt-enhancer-dataset) — \~1,790 short → detailed image-prompt pairs |
+| Dataset | gokaygokay/prompt-enhancer-dataset (https://huggingface.co/datasets/gokaygokay/prompt-enhancer-dataset) — \~1,790 short → detailed image-prompt pairs |
 
-| Export | Direct GGUF export via Unsloth's `save\_pretrained\_gguf`, quantized to q4\_K\_M |
+| Export | Direct GGUF export via Unsloth's save\_pretrained\_gguf, quantized to q4\_K\_M |
 
 
 
-Unlike a manual llama.cpp export pipeline, Unsloth handles the merge + GGUF conversion + quantization in a single function call, which is why this project has no separate merge/export scripts — it's a single Colab notebook end to end.
+Unlike a manual llama.cpp export pipeline, Unsloth handles the merge, GGUF conversion, and quantization in a single function call, which is why this project has no separate merge/export scripts — it's a single Colab notebook end to end.
 
 
 
@@ -74,9 +74,11 @@ Unlike a manual llama.cpp export pipeline, Unsloth handles the merge + GGUF conv
 
 
 
-\- `promptmax\_train.jsonl` — the cleaned training data (instruction/output pairs)
+\- data/promptmax\_train.jsonl — the cleaned training data (instruction/output pairs)
 
-\- `Modelfile` — the Ollama configuration used to package the GGUF into a runnable model
+\- examples.md — a sample input/output interaction
+
+\- Modelfile — the Ollama configuration used to package the GGUF into a runnable model
 
 
 
