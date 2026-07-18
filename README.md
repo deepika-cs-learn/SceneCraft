@@ -2,37 +2,115 @@
 
 
 
-A locally fine-tuned language model, trained via QLoRA on short-to-detailed image prompt pairs, exported to GGUF, and served through Ollama (https://ollama.com/).
+scenecraft is a locally fine-tuned language model designed to expand short image prompts into rich, detailed scene descriptions suitable for text-to-image generation models (Stable Diffusion, Midjourney-style prompts, etc.).
 
 
 
-\- Base training examples: 1,790
-
-\- Evaluation: ROUGE-L F1 = 0.257 (see caveat below)
-
-\- Trained on: Google Colab (free T4 GPU)
-
-\- Export format: GGUF, quantized to q4\_K\_M (\~1.9GB)
+It is trained via QLoRA, exported to GGUF, and served through Ollama for zero-setup local use.
 
 
 
-\## Try it with Ollama (no setup required)
+\------------------------------------------------------------
 
 
 
-`ollama pull deepikagummallacs/scenecraft
-
-&#x20;ollama run deepikagummallacs/scenecraft
-
-`
+\## Overview
 
 
 
-Model page: https://ollama.com/deepikagummallacs/scenecraft
+Base Model: unsloth/Qwen2.5-3B-Instruct  
+
+Training Method: QLoRA (4-bit)  
+
+Training Examples: 1,790 short → detailed prompt pairs  
+
+GPU Used: Google Colab (Free T4)  
+
+Export Format: GGUF (q4\_K\_M)  
+
+Model Size: \~1.9GB  
+
+Evaluation (Sanity Check): ROUGE-L F1 = 0.257  
 
 
 
-See examples.md for a sample interaction.
+Note: Evaluation was performed on a sample drawn from training data. This is a rough sanity check, not a rigorous benchmark.
+
+
+
+\------------------------------------------------------------
+
+
+
+\## Try It with Ollama (No Setup Required)
+
+
+
+Run locally using:
+
+
+
+ollama pull deepikagummallacs/scenecraft
+
+ollama run deepikagummallacs/scenecraft
+
+
+
+Model page:
+
+https://ollama.com/deepikagummallacs/scenecraft
+
+
+
+No Python, no GPU, no cloning required — only Ollama installed locally.
+
+
+
+\------------------------------------------------------------
+
+
+
+\## What scenecraft Does
+
+
+
+Input:
+
+a girl in a forest
+
+
+
+Output:
+
+A young girl standing in a dense emerald forest, soft golden sunlight filtering
+
+through tall pine trees, gentle mist hovering above moss-covered ground,
+
+cinematic lighting, ultra-detailed textures, shallow depth of field,
+
+high-resolution, fantasy atmosphere.
+
+
+
+The goal is creative scene enrichment, not literal rewriting.
+
+
+
+It intentionally:
+
+\- Adds lighting details
+
+\- Introduces environmental context
+
+\- Enhances atmosphere
+
+\- Expands visual depth
+
+\- Adds stylistic cues for generative art models
+
+
+
+\------------------------------------------------------------
 
 
 
@@ -40,103 +118,191 @@ See examples.md for a sample interaction.
 
 
 
-If you want to retrain the model yourself, clone the repo:
+To retrain or modify the model:
 
 
 
-`git clone https://github.com/deepika-cs-learn/SceneCraft
+git clone https://github.com/deepika-cs-learn/SceneCraft
 
-&#x20;cd SceneCraft
+cd SceneCraft
 
-`
 
 
+\------------------------------------------------------------
 
-\*\*Phase 1 — Data Collection\*\*
 
 
+Phase 1 — Data Collection
 
-Used the gokaygokay/prompt-enhancer-dataset from Hugging Face (https://huggingface.co/datasets/gokaygokay/prompt-enhancer-dataset) — 1,790 short-image-caption to detailed-description pairs, cleaned and deduplicated into data/promptmax\_train.jsonl.
 
 
+Dataset used:
 
-\*\*Phase 2 — Training Setup\*\*
+gokaygokay/prompt-enhancer-dataset (Hugging Face)
 
 
 
-Opened the Unsloth Qwen2.5-3B Colab notebook and set the runtime to a T4 GPU.
+Contains 1,790 short-caption → detailed-description pairs.
 
 
 
-\*\*Phase 3 — Load Base Model + LoRA Config\*\*
+Data was cleaned, deduplicated, and saved as:
 
+data/promptmax\_train.jsonl
 
 
-Loaded unsloth/Qwen2.5-3B-Instruct in 4-bit (QLoRA), with LoRA rank r = 16 applied to the attention and MLP projection layers.
 
+\------------------------------------------------------------
 
 
-\*\*Phase 4 — Format \& Load Data\*\*
 
+Phase 2 — Training Environment
 
 
-Formatted each row using the model's chat template, with a system prompt describing the image-expansion task.
 
+Used Unsloth QLoRA Colab notebook.
 
+Runtime: Free T4 GPU.
 
-\*\*Phase 5 — QLoRA Training\*\*
+Training time: \~20–60 minutes for 3 epochs.
 
 
 
-Trained in 4-bit precision using QLoRA via Unsloth, for 3 epochs on the free Colab T4 GPU (roughly 20-60 minutes).
+\------------------------------------------------------------
 
 
 
-\*\*Phase 6 — Evaluation\*\*
+Phase 3 — Base Model + LoRA Configuration
 
 
 
-Ran a ROUGE-L comparison between model outputs and reference outputs on a 50-example sample:## Calling it from code
+Base model:
 
+unsloth/Qwen2.5-3B-Instruct
 
 
-\##Average ROUGE-L F1: 0.257
 
+Configuration:
 
+\- 4-bit loading (QLoRA)
 
-Important caveat: this was evaluated on a sample drawn from the training data itself, not a separate held-out test set — no test split was reserved before training. Treat this as a rough sanity check rather than a rigorous benchmark. Full script and output: evaluate.py and reports/evaluation.md.
+\- LoRA rank r = 16
 
+\- Applied to attention and MLP projection layers
 
 
-\*\*Phase 7 — Merge + GGUF Export\*\*
 
+\------------------------------------------------------------
 
 
-Unlike a manual PEFT + llama.cpp pipeline, Unsloth merges the LoRA adapter into the base model and exports directly to GGUF in a single call:
 
+Phase 4 — Data Formatting
 
 
-`model.save\_pretrained\_gguf("scenecraft\_model", tokenizer, quantization\_method="q4\_k\_m")`
 
+Each pair was formatted using the model's chat template:
 
 
 
+System: You expand short image prompts into detailed scene descriptions.
 
-This produces a quantized .gguf file (\~1.9GB) with no separate merge or conversion script needed.
+User: a castle on a hill
 
+Assistant: \[expanded output]
 
 
-\*\*Phase 8 — Ollama Packaging \& Inference\*\*
 
+\------------------------------------------------------------
 
 
-Packaged the GGUF file into an Ollama model using a Modelfile:
 
+Phase 5 — QLoRA Training
 
 
-`ollama create scenecraft -f Modelfile
 
-ollama run scenecraft `
+\- 4-bit precision
+
+\- 3 epochs
+
+\- Free Colab T4 GPU
+
+\- \~20–60 minutes total training
+
+
+
+\------------------------------------------------------------
+
+
+
+Phase 6 — Evaluation
+
+
+
+Average ROUGE-L F1: 0.257
+
+
+
+Important:
+
+No held-out test split was used.
+
+This is only a sanity check.
+
+
+
+Evaluation files:
+
+evaluate.py
+
+reports/evaluation.md
+
+
+
+\------------------------------------------------------------
+
+
+
+Phase 7 — Merge + GGUF Export
+
+
+
+Exported using Unsloth:
+
+
+
+model.save\_pretrained\_gguf(
+
+&#x20;   "scenecraft\_model",
+
+&#x20;   tokenizer,
+
+&#x20;   quantization\_method="q4\_k\_m"
+
+)
+
+
+
+This merges the LoRA adapter and exports directly to GGUF.
+
+Final file size: \~1.9GB
+
+
+
+\------------------------------------------------------------
+
+
+
+Phase 8 — Ollama Packaging
+
+
+
+ollama create scenecraft -f Modelfile
+
+ollama run scenecraft
+
+
+
+\------------------------------------------------------------
 
 
 
@@ -144,23 +310,27 @@ ollama run scenecraft `
 
 
 
-Just want to run the model? All you need is Ollama (https://ollama.com/) installed locally — no Python, no GPU, no cloning required:
+To run:
+
+\- Ollama installed locally
 
 
 
-`ollama pull deepikagummallacs/scenecraft
+To retrain:
 
-ollama run deepikagummallacs/scenecraft `
+\- Google account (Colab GPU)
+
+\- Hugging Face account
+
+\- Basic Python knowledge
 
 
 
-Want to retrain or modify the pipeline yourself? You'll additionally need:
+No local GPU required.
 
 
 
-\- A Google account (for Colab's free GPU — no local GPU required)
-
-\- A Hugging Face account (to load the dataset)
+\------------------------------------------------------------
 
 
 
@@ -168,9 +338,47 @@ Want to retrain or modify the pipeline yourself? You'll additionally need:
 
 
 
-\- Built for visual/scene prompts specifically — not general-purpose prompt improvement (coding, writing, analysis, etc.).
+\- Built specifically for visual/scene prompts.
 
-\- Tends to invent plausible visual details not present in the original short prompt (lighting, background objects) — intentional, since the goal is richer output, not literal expansion.
+\- Not designed for coding or general writing tasks.
 
-\- Evaluation is a rough sanity check (see Phase 6 caveat above), not a rigorous benchmark.
+\- May invent plausible visual details (lighting, textures, atmosphere).
+
+\- Evaluation is not rigorous.
+
+
+
+\------------------------------------------------------------
+
+
+
+\## Intended Use Cases
+
+
+
+\- Stable Diffusion prompt enhancement
+
+\- Midjourney-style scene building
+
+\- Creative concept art ideation
+
+\- Game environment brainstorming
+
+\- Storyboarding visual scene expansion
+
+
+
+\------------------------------------------------------------
+
+
+
+\## Summary
+
+
+
+scenecraft demonstrates that domain-specific fine-tuning is possible on free GPUs using QLoRA and Unsloth, and can be deployed locally via GGUF and Ollama with zero setup.
+
+
+
+Lightweight. Specialized. Fully local.
 
