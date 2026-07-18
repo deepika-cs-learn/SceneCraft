@@ -1,0 +1,8 @@
+import requests
+
+response = requests.post("http://localhost:11434/api/generate", json={
+    "model": "promptmax",
+    "prompt": "a cat sitting on a windowsill",
+    "stream": False,
+})
+print(response.json()["response"])
