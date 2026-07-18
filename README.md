@@ -1,176 +1,336 @@
-\# scenecraft — Fine-Tuned Image Prompt Expansion Model
+\# 🎨 SceneCraft
 
 
 
-A locally fine-tuned language model, trained via QLoRA on short-to-detailed image prompt pairs, exported to GGUF, and served through Ollama (https://ollama.com/).
+> A locally fine-tuned \*\*Qwen2.5-3B\*\* model that transforms short scene descriptions into rich, detailed prompts for AI image generation.
 
 
 
-\- Base training examples: 1,790
-
-\- Evaluation: ROUGE-L F1 = 0.257 (see caveat below)
-
-\- Trained on: Google Colab (free T4 GPU)
-
-\- Export format: GGUF, quantized to q4\_K\_M (\~1.9GB)
+Built with \*\*QLoRA + Unsloth\*\*, exported directly to \*\*GGUF\*\*, and packaged for \*\*Ollama\*\*.
 
 
 
-\## Try it with Ollama (no setup required)
+\---
 
 
 
-```ollama pull deepikagummallacs/scenecraft
+\## ✨ Features
 
-&#x20;ollama run deepikagummallacs/scenecraft
+
+
+\- Convert simple image ideas into detailed generation prompts
+
+\- Runs completely offline with Ollama
+
+\- Fine-tuned on nearly \*\*1,800\*\* prompt-enhancement examples
+
+\- Lightweight \*\*3B\*\* model suitable for local inference
+
+\- Direct GGUF export using Unsloth (no manual llama.cpp pipeline)
+
+
+
+\---
+
+
+
+\## 🚀 Try it
+
+
+
+Pull the model from Ollama:
+
+
+
+```bash
+
+ollama pull deepikagummallacs/scenecraft
 
 ```
 
 
 
-Model page: https://ollama.com/deepikagummallacs/scenecraft
+Run it:
 
 
 
-See examples.md for a sample interaction.
+```bash
 
+ollama run deepikagummallacs/scenecraft
 
+```
 
-\## Full Training Pipeline
 
 
+\---
 
-If you want to retrain the model yourself, clone the repo:
 
 
+\## Example
 
-`git clone https://github.com/deepika-cs-learn/SceneCraft
 
-&#x20;cd SceneCraft
 
-`
+\### Input
 
 
 
-\*\*Phase 1 — Data Collection\*\*
+```text
 
+a cat sitting on a windowsill
 
+```
 
-Used the gokaygokay/prompt-enhancer-dataset from Hugging Face (https://huggingface.co/datasets/gokaygokay/prompt-enhancer-dataset) — 1,790 short-image-caption to detailed-description pairs, cleaned and deduplicated into data/promptmax\_train.jsonl.
 
 
+\### Output
 
-\*\*Phase 2 — Training Setup\*\*
 
 
+```text
 
-Opened the Unsloth Qwen2.5-3B Colab notebook and set the runtime to a T4 GPU.
+A white and black cat is sitting on a windowsill while gazing outside. Bright natural sunlight streams through the window, illuminating the cat's fur and creating soft shadows across the room. Its front paws rest gently on the sill while the background features a calm indoor setting with warm tones, producing a peaceful and cozy atmosphere...
 
+```
 
 
-\*\*Phase 3 — Load Base Model + LoRA Config\*\*
 
+\---
 
 
-Loaded unsloth/Qwen2.5-3B-Instruct in 4-bit (QLoRA), with LoRA rank r = 16 applied to the attention and MLP projection layers.
 
+\# 🏗 Model Details
 
 
-\*\*Phase 4 — Format \& Load Data\*\*
 
+| Property | Value |
 
+|-----------|-------|
 
-Formatted each row using the model's chat template, with a system prompt describing the image-expansion task.
+| Base Model | Qwen2.5-3B-Instruct |
 
+| Fine-tuning Method | QLoRA (4-bit) |
 
+| Framework | Unsloth |
 
-\*\*Phase 5 — QLoRA Training\*\*
+| Training Platform | Google Colab (Free T4 GPU) |
 
+| Dataset | gokaygokay/prompt-enhancer-dataset |
 
+| Training Samples | \~1,790 prompt pairs |
 
-Trained in 4-bit precision using QLoRA via Unsloth, for 3 epochs on the free Colab T4 GPU (roughly 20-60 minutes).
+| Output Format | GGUF |
 
+| Quantization | q4\_K\_M |
 
+| Runtime | Ollama |
 
-\*\*Phase 6 — Evaluation\*\*
 
 
+\---
 
-Ran a ROUGE-L comparison between model outputs and reference outputs on a 50-example sample:## Calling it from code
 
 
+\# 🛠 Training Pipeline
 
-\##Average ROUGE-L F1: 0.257
 
 
+```text
 
-Important caveat: this was evaluated on a sample drawn from the training data itself, not a separate held-out test set — no test split was reserved before training. Treat this as a rough sanity check rather than a rigorous benchmark. Full script and output: evaluate.py and reports/evaluation.md.
+Prompt Dataset
 
+&#x20;     │
 
+&#x20;     ▼
 
-\*\*Phase 7 — Merge + GGUF Export\*\*
+QLoRA Fine-tuning
 
+&#x20;     │
 
+&#x20;     ▼
 
-Unlike a manual PEFT + llama.cpp pipeline, Unsloth merges the LoRA adapter into the base model and exports directly to GGUF in a single call:
+Unsloth
 
+&#x20;     │
 
+&#x20;     ▼
 
-```model.save\_pretrained\_gguf("scenecraft\_model", tokenizer, quantization\_method="q4\_k\_m")```
+Merge LoRA Weights
 
+&#x20;     │
 
+&#x20;     ▼
 
+Export to GGUF
 
+&#x20;     │
 
-This produces a quantized .gguf file (\~1.9GB) with no separate merge or conversion script needed.
+&#x20;     ▼
 
+Quantize (Q4\_K\_M)
 
+&#x20;     │
 
-\*\*Phase 8 — Ollama Packaging \& Inference\*\*
+&#x20;     ▼
 
+Ollama Model
 
+```
 
-Packaged the GGUF file into an Ollama model using a Modelfile:
 
 
+Unlike the traditional llama.cpp workflow, \*\*Unsloth\*\* performs weight merging, GGUF conversion, and quantization in a single export step, allowing the entire project to be built within one Google Colab notebook.
 
-```ollama create scenecraft -f Modelfile
 
-ollama run scenecraft ```
 
+\---
 
 
-\## Requirements
 
+\# 📂 Repository Structure
 
 
-Just want to run the model? All you need is Ollama (https://ollama.com/) installed locally — no Python, no GPU, no cloning required:
 
+```text
 
+SceneCraft/
 
-```ollama pull deepikagummallacs/scenecraft
+│
 
-ollama run deepikagummallacs/scenecraft ```
+├── data/
 
+│   └── promptmax\_train.jsonl
 
+│
 
-Want to retrain or modify the pipeline yourself? You'll additionally need:
+├── examples.md
 
+│
 
+├── Modelfile
 
-\- A Google account (for Colab's free GPU — no local GPU required)
+│
 
-\- A Hugging Face account (to load the dataset)
+├── SceneCraft\_Training.ipynb
 
+│
 
+└── README.md
 
-\## Limitations
+```
 
 
 
-\- Built for visual/scene prompts specifically — not general-purpose prompt improvement (coding, writing, analysis, etc.).
+\---
 
-\- Tends to invent plausible visual details not present in the original short prompt (lighting, background objects) — intentional, since the goal is richer output, not literal expansion.
 
-\- Evaluation is a rough sanity check (see Phase 6 caveat above), not a rigorous benchmark.
+
+\# 📖 Dataset
+
+
+
+Training data:
+
+
+
+\*\*gokaygokay/prompt-enhancer-dataset\*\*
+
+
+
+The dataset contains pairs of:
+
+
+
+\- Short image descriptions
+
+\- Rich, detailed image-generation prompts
+
+
+
+Approximately \*\*1,790\*\* examples were used for fine-tuning.
+
+
+
+\---
+
+
+
+\# 💡 Use Cases
+
+
+
+\- Stable Diffusion prompts
+
+\- FLUX prompts
+
+\- Midjourney prompts
+
+\- DALL·E prompts
+
+\- Leonardo AI
+
+\- Ideogram
+
+\- General prompt enhancement
+
+
+
+\---
+
+
+
+\# ⚠️ Limitations
+
+
+
+\- Designed specifically for image-prompt expansion.
+
+\- Not intended as a general-purpose instruction-following model.
+
+\- May introduce plausible visual details (lighting, scenery, textures, objects) that were not explicitly mentioned in the original prompt.
+
+\- No formal benchmark evaluation (ROUGE, BLEU, GPT-4 judging, etc.) has been performed yet.
+
+
+
+\---
+
+
+
+\# 📦 Model
+
+
+
+Available on Ollama:
+
+
+
+https://ollama.com/deepikagummallacs/scenecraft
+
+
+
+\---
+
+
+
+\# 🙏 Acknowledgements
+
+
+
+\- Qwen Team
+
+\- Unsloth
+
+\- Ollama
+
+\- Hugging Face
+
+\- gokaygokay/prompt-enhancer-dataset
+
+
+
+\---
+
+
+
+\## ⭐ If you find this project useful, consider giving it a star!
 
